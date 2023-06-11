@@ -11,9 +11,9 @@ contract('Voting', accounts => {
 
     let VotingInstance;
 
-    before(async function () {
-        VotingInstance = await Voting.deployed({ from: _owner });
-    });
+    // before(async function () {
+    //     VotingInstance = await Voting.deployed({ from: _owner });
+    // });
 
     // // ::::::::::::: GETTERS ::::::::::::: //
     // describe("tests getters", function () {
@@ -39,27 +39,29 @@ contract('Voting', accounts => {
     // });
 
     // // ::::::::::::: REGISTRATION ::::::::::::: //
-    // describe("tests add voter", function () {
-    //     beforeEach(async function () {
-    //         VotingInstance = await Voting.deployed();
-    //     });
+    describe("tests add voter", function () {
+        beforeEach(async function () {
+            VotingInstance = await Voting.new({ from: _owner });
+        });
 
-    //     it("...should be only owner", async function () {
+        it("...should be only owner", async function () {
+            await expectRevert(VotingInstance.addVoter(_firstVoter, { from: _random }), 'Ownable: caller is not the owner');
 
-    //     });
+        });
 
-    //     it("...should add voter", async function () {
+        it("...should add voter", async function () {
+            expectEvent(await VotingInstance.addVoter(_firstVoter, { from: _owner }), 'VoterRegistered', { voterAddress: _firstVoter });
+        });
 
-    //     });
+        it("...should voter registration is not open yet", async function () {
+            await checkRevertWorkflowStatus(async () => await VotingInstance.addVoter(_firstVoter, { from: _owner }), 0, 'Voters registration is not open yet');
+        });
 
-    //     it("...should voter registration is not open yet", async function () {
-
-    //     });
-
-    //     it("...should voter already registered", async function () {
-
-    //     });
-    // });
+        it("...should voter already registered", async function () {
+            await VotingInstance.addVoter(_firstVoter, { from: _owner });
+            await expectRevert(VotingInstance.addVoter(_firstVoter, { from: _owner }), 'Already registered');
+        });
+    });
 
     // // ::::::::::::: PROPOSALS ::::::::::::: //
     // describe("tests add proposal", function () {
@@ -91,11 +93,9 @@ contract('Voting', accounts => {
     //     });
 
     //     it("...should be only voter", async function () {
-
     //     });
 
     //     it("...status should be VotingSessionStarted", async function () {
-
     //     });
 
     //     it("...already voted", async function () {
@@ -112,83 +112,97 @@ contract('Voting', accounts => {
     // });
 
     // ::::::::::::: STATE ::::::::::::: //
-    describe("tests state", function () {
-        context("tests startProposalsRegistering", function () {
-            beforeEach(async function () {
-                VotingInstance = await Voting.new({ from: _owner });
-            });
+    // describe("tests state", function () {
+    //     context("tests startProposalsRegistering", function () {
+    //         beforeEach(async function () {
+    //             VotingInstance = await Voting.new({ from: _owner });
+    //         });
 
-            it("...should be only owner", async function () {
-                await expectRevert(VotingInstance.startProposalsRegistering({ from: _random }), 'Ownable: caller is not the owner');
-            });
+    //         it("...should be only owner", async function () {
+    //             await expectRevert(VotingInstance.startProposalsRegistering({ from: _random }), 'Ownable: caller is not the owner');
+    //         });
 
-            it("...status changed", async function () {
-                await checkWorkflowStatusChange(1);
-            });
+    //         it("...status changed", async function () {
+    //             await checkWorkflowStatusChange(1);
+    //         });
 
-            it("...status doesn't changed", async function () {
-                console.log('oui', (await getStatus()).toString())
+    //         it("...status doesn't changed", async function () {
+    //             await checkRevertWorkflowStatus(async () => await VotingInstance.startProposalsRegistering({ from: _owner }), 0, 'Registering proposals cant be started now');
+    //         });
+    //     });
 
-                await checkRevertWorkflowStatus(VotingInstance.startProposalsRegistering({ from: _owner }), 1, 'Registering proposals cant be started now');
-            });
+    //     context("tests endProposalsRegistering", function () {
+    //         beforeEach(async function () {
+    //             VotingInstance = await Voting.new({ from: _owner });
+    //         });
+
+    //         it("...should be only owner", async function () {
+    //             await expectRevert(VotingInstance.endProposalsRegistering({ from: _random }), 'Ownable: caller is not the owner');
+    //         });
+
+    //         it("...status changed", async function () {
+    //             await checkWorkflowStatusChange(2);
+    //         });
+
+    //         it("...status doesn't changed", async function () {
+    //             await checkRevertWorkflowStatus(async () => await VotingInstance.endProposalsRegistering({ from: _owner }), 1, 'Registering proposals havent started yet');
+    //         });
+    //     });
+
+    context("tests startVotingSession", function () {
+        beforeEach(async function () {
+            VotingInstance = await Voting.new({ from: _owner });
         });
 
-        // context("tests endProposalsRegistering", function () {
-        //     it("...should be only owner", async function () {
-        //         await expectRevert(VotingInstance.endProposalsRegistering({ from: _random }), 'Ownable: caller is not the owner');
-        //     });
+        it("...should be only owner", async function () {
+            await expectRevert(VotingInstance.startVotingSession({ from: _random }), 'Ownable: caller is not the owner');
+        });
 
-        //     it("...status changed", async function () {
-        //         await checkWorkflowStatusChange(2);
-        //     });
+        it("...status changed", async function () {
+            await checkWorkflowStatusChange(3);
+        });
 
-        //     it("...status doesn't changed", async function () {
-        //         await checkRevertWorkflowStatus(VotingInstance.endProposalsRegistering({ from: _owner }), 2, 'Registering proposals havent started yet');
-        //     });
-        // });
-
-        // context("tests startVotingSession", function () {
-        //     it("...should be only owner", async function () {
-        //         await expectRevert(VotingInstance.startVotingSession({ from: _random }), 'Ownable: caller is not the owner');
-        //     });
-
-        //     it("...status changed", async function () {
-        //         await checkWorkflowStatusChange(3);
-        //     });
-
-        //     it("...status doesn't changed", async function () {
-        //         await checkRevertWorkflowStatus(VotingInstance.startVotingSession({ from: _owner }), 3, 'Registering proposals phase is not finished');
-        //     });
-        // });
-
-        // context("tests endVotingSession", function () {
-        //     it("...should be only owner", async function () {
-        //         await expectRevert(VotingInstance.endVotingSession({ from: _random }), 'Ownable: caller is not the owner');
-        //     });
-
-        //     it("...status changed", async function () {
-        //         await checkWorkflowStatusChange(4);
-        //     });
-
-        //     it("...status doesn't changed", async function () {
-        //         await checkRevertWorkflowStatus(VotingInstance.endVotingSession({ from: _owner }), 4, 'Voting session havent started yet');
-        //     });
-        // });
-
-        // context("tests tallyVotes", function () {
-        //     it("...should be only owner", async function () {
-        //         await expectRevert(VotingInstance.tallyVotes({ from: _random }), 'Ownable: caller is not the owner');
-        //     });
-
-        //     it("...status changed", async function () {
-        //         await checkWorkflowStatusChange(5);
-        //     });
-
-        //     it("...status doesn't changed", async function () {
-        //         await checkRevertWorkflowStatus(VotingInstance.tallyVotes({ from: _owner }), 5, 'Current status is not voting session ended');
-        //     });
-        // });
+        it("...status doesn't changed", async function () {
+            await checkRevertWorkflowStatus(async () => await VotingInstance.startVotingSession({ from: _owner }), 2, 'Registering proposals phase is not finished');
+        });
     });
+
+    //     context("tests endVotingSession", function () {
+    //         beforeEach(async function () {
+    //             VotingInstance = await Voting.new({ from: _owner });
+    //         });
+
+    //         it("...should be only owner", async function () {
+    //             await expectRevert(VotingInstance.endVotingSession({ from: _random }), 'Ownable: caller is not the owner');
+    //         });
+
+    //         it("...status changed", async function () {
+    //             await checkWorkflowStatusChange(4);
+    //         });
+
+    //         it("...status doesn't changed", async function () {
+    //             await checkRevertWorkflowStatus(async () => await VotingInstance.endVotingSession({ from: _owner }), 3, 'Voting session havent started yet');
+    //         });
+    //     });
+
+    //     context("tests tallyVotes", function () {
+    //         beforeEach(async function () {
+    //             VotingInstance = await Voting.new({ from: _owner });
+    //         });
+
+    //         it("...should be only owner", async function () {
+    //             await expectRevert(VotingInstance.tallyVotes({ from: _random }), 'Ownable: caller is not the owner');
+    //         });
+
+    //         it("...status changed", async function () {
+    //             await checkWorkflowStatusChange(5);
+    //         });
+
+    //         it("...status doesn't changed", async function () {
+    //             await checkRevertWorkflowStatus(async () => await VotingInstance.tallyVotes({ from: _owner }), 4, 'Current status is not voting session ended');
+    //         });
+    //     });
+    // });
 
     async function checkWorkflowStatusChange(expectedNextStatus) {
         expectEvent(await goToStatus(expectedNextStatus), 'WorkflowStatusChange', { previousStatus: new BN(expectedNextStatus - 1), newStatus: new BN(expectedNextStatus) });
@@ -196,16 +210,18 @@ contract('Voting', accounts => {
         expect(currentStatus).to.be.bignumber.equal(new BN(expectedNextStatus))
     }
 
-    async function checkRevertWorkflowStatus(action, expectedNextStatus, msg) {
+    const checkRevertWorkflowStatus = async function (promise, expectedGoodStatus, msg) {
         for (let currentStatus = 0; currentStatus < 5; currentStatus++) {
             let nextStatus = currentStatus + 1;
-            console.log('loop', currentStatus)
-            await goNextStatus(nextStatus);
-            if (nextStatus === expectedNextStatus) {
+            if (currentStatus === expectedGoodStatus) {
+                await goNextStatus(nextStatus);
                 continue;
+            } else {
+                await expectRevert(promise(), msg);
             }
-            await expectRevert(action, msg);
+            await goNextStatus(nextStatus);
         }
+        await expectRevert(promise(), msg);
     }
 
     async function getStatus() {
@@ -215,7 +231,6 @@ contract('Voting', accounts => {
     async function goNextStatus(nextStatus) {
         switch (nextStatus) {
             case 1:
-                console.log('goNextStatus', (await getStatus()).toString())
                 return await VotingInstance.startProposalsRegistering({ from: _owner })
             case 2:
                 return await VotingInstance.endProposalsRegistering({ from: _owner })
